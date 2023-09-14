@@ -1,0 +1,15 @@
+{
+  "arrowParens": "avoid",
+  "tabWidth": 2,
+  "useTabs": false,
+  "bracketSameLine": false,
+  "semi": true,
+  "printWidth": 100,
+  "bracketSpacing": false,
+  "endOfLine": "lf",
+  "jsxSingleQuote": false,
+  "singleQuote": true,
+  "htmlWhitespaceSensitivity": "css",
+  "quoteProps": "consistent",
+  "singleAttributePerLine": false
+}

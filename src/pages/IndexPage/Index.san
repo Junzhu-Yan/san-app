@@ -1,0 +1,36 @@
+<template>
+  <div class="root">
+    <div class="title">
+      {{ title }}
+    </div>
+    <div class="obj">
+      <div class="name">{{ info.name }}</div>
+      <div class="tool">{{ info.status ? info?.class : '' }}</div>
+    </div>
+  </div>
+</template>
+
+<script lang="ts">
+import {Component} from 'san';
+
+export default class Index extends Component {
+  static trimWhitespace = 'all';
+
+  static components = {};
+
+  initData() {
+    return {
+      title: 'Hello',
+      info: {
+        name: 'San',
+        class: 'tool',
+        status: true,
+      },
+    };
+  }
+}
+</script>
+
+<style lang="less">
+@import './index.less';
+</style>

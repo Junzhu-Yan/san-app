@@ -1,0 +1,4 @@
+defaults
+last 2 versions
+iOS >= 15
+android >= 10
