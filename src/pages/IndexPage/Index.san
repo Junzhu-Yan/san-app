@@ -3,30 +3,54 @@
     <div class="title">
       {{ title }}
     </div>
-    <div class="obj">
-      <div class="name">{{ info.name }}</div>
-      <div class="tool">{{ info.status ? info?.class : '' }}</div>
-    </div>
+    <ul class="obj">
+      <li>{{ info.name }}</li>
+      <li>Ver.{{ info.status ? info?.classes.length : '' }}</li>
+      <li s-for="item, index in info.classes">
+        name: {{ item.name }} ====> {{ item?.count }}
+        <button item="{{ item }}" on-click="handleClick(index)">ADD</button>
+      </li>
+    </ul>
   </div>
 </template>
 
-<script lang="ts">
+<script lang="js">
 import {Component} from 'san';
+import Button from './components/Button.san';
 
 export default class Index extends Component {
   static trimWhitespace = 'all';
 
-  static components = {};
+  static components = {
+    button: Button,
+  };
 
   initData() {
     return {
       title: 'Hello',
       info: {
         name: 'San',
-        class: 'tool',
         status: true,
+        classes: [
+            {
+                name: 'fire',
+                count: 1,
+            },
+            {
+                name: 'get',
+                count: 1,
+            },
+            {
+                name: 'set',
+                count: 1,
+            },
+        ]
       },
     };
+  }
+
+  handleClick(index) {
+    this.data.set(`info.classes[${index}]['count']`, this.data.get(`info.classes[${index}]?.count`) + 1 );
   }
 }
 </script>
