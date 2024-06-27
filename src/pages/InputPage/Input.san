@@ -1,0 +1,303 @@
+<template>
+    <div class="input-root">
+        <div class="content">
+            <p>
+                {{ fakeContent | raw }}
+            </p>
+        </div>
+        <div class="comment-bar" s-if="!isMasked">
+            <div class="comment-bar-area" on-click="handleMask(true)">
+                <div class="comment-bar-holder">{{ hintMsg }}</div>
+                <div class="btn">点评</div>
+            </div>
+        </div>
+        <div class="mask" s-if="isMasked" on-click="handleMask(false)"></div>
+        <div class="bar" s-if="isMasked">
+            <div class="input-wrapper">
+                <div
+                    s-ref="textarea"
+                    class="input-editor"
+                    contentEditable="true"
+                    data-placeholder="请输入评论"
+                    on-focus="handleFocus(1)"
+                    on-blur="handleFocus(0)"
+                    on-input="handleChangeText"
+                ></div>
+            </div>
+            <input type="button" value="发送" on-click="send" />
+        </div>
+    </div>
+</template>
+
+<script lang="ts">
+import {Component} from 'san';
+
+const HINT = '本场表现如何，快来评价一下～';
+
+export default class Input extends Component {
+    static trimWhitespace = 'all';
+
+    static components = {};
+
+    touchStart: any;
+    bindStop: Function;
+    bindTouchStart: Function;
+
+    initData() {
+        return {
+            fakeContent: '',
+            content: '',
+            hintMsg: '快来评价一下～',
+            maxLength: 200,
+            isMasked: false,
+            showMaxInfo: false,
+        };
+    }
+
+    attached() {
+        this.bindStop = this.stop.bind(this);
+        this.bindTouchStart = this.touchstart.bind(this);
+        const cache = localStorage.getItem('content');
+        if (!cache) {
+            fetch(`https://sdfsdf.dev/${Math.floor(Math.random() * 50)}p`)
+                .then(resp => resp.json())
+                .then(json => {
+                    this.data.set('fakeContent', json.data);
+                })
+                .catch(err => {
+                    console.log(err);
+                });
+        } else {
+            this.data.set('fakeContent', cache);
+        }
+    }
+
+    handleMask(type: boolean) {
+        this.data.set('isMasked', type);
+        const content = this.data.get('content');
+        if (type) {
+            document.querySelector('body').style.overflow = 'hidden';
+            if (content.trim().length) {
+                setTimeout(() => {
+                    this.ref('textarea').innerText = content.trim();
+                }, 10);
+            }
+            setTimeout(() => {
+                this.ref('textarea').focus();
+            }, 20);
+        } else {
+            document.querySelector('body').style.overflow = 'auto';
+            if (!content.trim().length) {
+                this.data.set('hingMsg', HINT);
+            } else {
+                this.data.set('hintMsg', content.replace(/\s/g, ' '));
+            }
+        }
+    }
+    handleChangeText(e: Event) {
+        const value = (e as InputEvent).target.innerText;
+        const maxLength = this.data.get('maxLength');
+        if (value.length >= maxLength) {
+            this.data.set('showMaxInfo', true);
+        } else {
+            this.data.set('showMaxInfo', false);
+        }
+        this.data.set('content', value);
+    }
+
+    /**
+     * 监听触摸停止事件并判断是否允许滑动
+     * @param e 事件对象
+     */
+    stop(e: Event) {
+        const {target, touches} = e;
+        const inputDom = this.ref('textarea') as HTMLElement;
+        if (!inputDom || !target) {
+            // 节点对象判空
+            return;
+        }
+        const isSlideInInput = target === inputDom || inputDom.contains(target as Node); // 在输入框中滑动
+        const isMultiTouch = touches.length > 1; // 多指拖动
+        const isSlideUp = touches[0].pageY - this.touchStart < 0; // 向上滑动
+        const isSlideUpOverRange =
+            isSlideUp && inputDom.scrollTop + inputDom.clientHeight >= inputDom.scrollHeight - 2; // 向上滑动超出边界
+        const isSlideDownOverRange = !isSlideUp && inputDom.scrollTop <= 0; // 向下滑动超出边界
+
+        if (isSlideInInput && !isMultiTouch && !isSlideUpOverRange && !isSlideDownOverRange) {
+            console.log('stop', 'OK');
+            return;
+        }
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+    }
+
+    /**
+     * 监听开始触摸事件
+     * @param e 事件对象
+     */
+    touchstart(e: Event) {
+        const {touches} = e;
+        const touch = touches[touches.length - 1];
+        this.touchStart = touch.pageY;
+    }
+    handleFocus(type) {
+        console.log('focus', type);
+        if (type) {
+            this.el.addEventListener('touchstart', this.bindTouchStart);
+            this.el.addEventListener('touchmove', this.bindStop);
+        } else {
+            this.el.removeEventListener('touchmove', this.bindStop);
+            this.el.removeEventListener('touchstart', this.bindTouchStart);
+        }
+    }
+    send() {
+        const content = this.data.get('content');
+        if (!content.trim().length) {
+            return;
+        }
+        this.data.set('content', '');
+        this.data.set('hingMsg', HINT);
+        this.handleMask(false);
+        setTimeout(() => {
+            alert('发送了：' + content);
+        }, 50);
+        const last = localStorage.getItem('content') || '';
+        localStorage.setItem(
+            'content',
+            `${last}<br/>[${new Date().toLocaleTimeString()}]<br/>${content}`
+        );
+    }
+}
+</script>
+
+<style lang="less" scoped>
+.input-root {
+    width: 100%;
+    height: 100%;
+    font-family: Arial, Helvetica, sans-serif;
+
+    .content {
+        margin-bottom: 50px;
+    }
+
+    .comment-bar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 50px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        box-shadow: 0 0 8px 0 #ccc;
+        background-color: #fff;
+
+        &-area {
+            display: flex;
+            width: 90%;
+            height: 32px;
+            padding: var(--cos-space-xs, 9px) var(--cos-space-sm, 12px);
+            justify-content: space-between;
+            align-items: center;
+            gap: var(--cos-space-2-xs, 6px);
+            flex-shrink: 0;
+            border-radius: var(--cos-border-xxl, 21px);
+            background: var(--cos-color-bg-dent, #f5f6f9);
+
+            .btn {
+                width: 50px;
+                color: #4e6ef2;
+                font-weight: bolder;
+            }
+        }
+
+        &-holder {
+            color: #848691;
+            flex: 1;
+            height: 32px;
+            line-height: 32px;
+            overflow: hidden;
+            word-wrap: break-word;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+    }
+
+    .mask {
+        position: fixed;
+        top: 0;
+        left: 0;
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background-color: rgba(0, 0, 0, 0.4);
+        -webkit-user-drag: none;
+        transition: all 0.5s;
+    }
+
+    .bar {
+        width: 100%;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        background-color: #fff;
+        border-radius: 16px 16px 0 0;
+        display: flex;
+        padding: 8px;
+        justify-content: space-between;
+        align-items: center;
+
+        .input-wrapper {
+            margin-right: var(--cos-space-xs, 9px);
+            flex: 1;
+            font-size: 16px;
+            min-height: 64px;
+            max-height: 128px;
+            margin: 2px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+
+            .textarea {
+                width: 100%;
+                resize: none;
+                min-height: 64px;
+                font-size: 16px;
+                border: none;
+                vertical-align: middle;
+                padding: 0;
+                resize: none;
+                box-sizing: border-box;
+                line-height: 18px;
+            }
+
+            .input-editor {
+                color: var(--cos-color-text, #1e1f24);
+                font-family: PingFang SC;
+                font-size: 14px;
+                font-style: normal;
+                font-weight: 400;
+                line-height: 14px; /* 100% */
+                min-height: 64px;
+                max-height: 128px;
+                width: 100%;
+                word-break: break-all;
+                overflow-y: scroll;
+                -webkit-overflow-scrolling: touch;
+                -webkit-tap-highlight-color: transparent;
+                -webkit-user-select: text;
+                user-select: text;
+
+                &:empty {
+                    &::after {
+                        content: attr(data-placeholder);
+                        color: var(--cos-color-text-slim, #b7b9c1);
+                    }
+                }
+            }
+        }
+    }
+}
+</style>

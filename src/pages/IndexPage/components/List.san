@@ -1,0 +1,31 @@
+<template>
+    <div class="{{$style['list']}}">
+        <ul>
+            <li s-for="item in list">
+                {{ item }}
+            </li>
+        </ul>
+    </div>
+</template>
+
+<script lang="ts">
+import {Component} from 'san';
+
+export default class List extends Component {
+    static trimWhitespace = 'all';
+
+    static components = {};
+
+    initData() {
+        return {
+            list: []
+        }
+    }
+}
+</script>
+
+<style lang="less" module>
+.list {
+
+}
+</style>

@@ -1,9 +1,11 @@
 import './root.less';
 import {router} from 'san-router';
-import Index from './IndexPage/Index.san';
 
-const app = document.getElementById('app');
-
-router.add({rule: '/', Component: Index, target: '#app'});
+router.setMode('html5' as any);
+router.add({
+  rule: '/',
+  Component: () => import('./CompPage/index'),
+  target: '#app',
+});
 
 router.start();
